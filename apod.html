@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NASA Explorer</title>
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- React -->
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <!-- Babel -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+
+<body class="bg-gray-100">
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+
+    /* ===============================
+        THEME CONTEXT
+    =============================== */
+
+    const ThemeContext = React.createContext();
+
+
+    function ThemeProvider({ children }) {
+
+      const [dark, setDark] = React.useState(false);
+
+      function toggleTheme() {
+        setDark(!dark);
+      }
+
+      return (
+        <ThemeContext.Provider
+          value={{ dark, toggleTheme }}
+        >
+          {children}
+        </ThemeContext.Provider>
+      );
+    }
+
+
+    /* ===============================
+        HEADER COMPONENT
+    =============================== */
+
+    function Header() {
+
+      const { dark, toggleTheme } =
+        React.useContext(ThemeContext);
+
+      return (
+        <div className="flex justify-between items-center mb-6">
+
+          <h1 className="text-2xl font-bold">
+            🚀 NASA Explorer
+          </h1>
+
+          <button
+            onClick={toggleTheme}
+            className="px-4 py-2 bg-blue-500 text-white rounded"
+          >
+            {dark ? "Light" : "Dark"} Mode
+          </button>
+
+        </div>
+      );
+    }
+
+
+    /* ===============================
+        NASA CARD COMPONENT
+    =============================== */
+
+    function NasaCard({ data }) {
+
+      // Optional Chaining + Nullish
+      const title = data?.title ?? "No Title";
+      const desc = data?.explanation ?? "No Description";
+      const img = data?.url ?? "";
+
+      return (
+        <div className="bg-white p-4 rounded shadow">
+
+          <h2 className="text-xl font-semibold mb-2">
+            {title}
+          </h2>
+
+          {img && (
+            <img
+              src={img}
+              className="rounded mb-3"
+            />
+          )}
+
+          <p className="text-gray-700">
+            {desc}
+          </p>
+
+        </div>
+      );
+    }
+
+
+    /* ===============================
+        MAIN DASHBOARD
+    =============================== */
+
+    function Dashboard() {
+
+      const [data, setData] = React.useState(null);
+      const [loading, setLoading] = React.useState(true);
+      const [error, setError] = React.useState(null);
+
+
+      /* ===============================
+          useEffect = Lifecycle
+          componentDidMount
+      =============================== */
+
+      React.useEffect(() => {
+
+        console.log("Component Mounted");
+
+        fetchData();
+
+
+        return () => {
+          console.log("Component Unmounted");
+        };
+
+      }, []);
+
+
+      /* ===============================
+          API CALL
+      =============================== */
+
+      async function fetchData() {
+
+        try {
+
+          setLoading(true);
+
+          const res = await fetch(
+            "https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY"
+          );
+
+          if (!res.ok) {
+            throw new Error("API Failed");
+          }
+
+          const json = await res.json();
+
+          setData(json);
+
+        }
+        catch (err) {
+
+          console.error(err);
+
+          setError("Failed to Load Data");
+
+        }
+        finally {
+
+          setLoading(false);
+
+        }
+      }
+
+
+      /* ===============================
+          CONDITIONAL RENDERING
+      =============================== */
+
+      if (loading) {
+        return (
+          <p className="text-center">
+            Loading...
+          </p>
+        );
+      }
+
+      if (error) {
+        return (
+          <p className="text-center text-red-500">
+            {error}
+          </p>
+        );
+      }
+
+      return <NasaCard data={data} />;
+    }
+
+
+    /* ===============================
+        APP ROOT
+    =============================== */
+
+    function App() {
+
+      const { dark } =
+        React.useContext(ThemeContext);
+
+      return (
+        <div
+          className={
+            dark
+              ? "min-h-screen bg-gray-900 text-white"
+              : "min-h-screen bg-gray-100 text-black"
+          }
+        >
+
+          <div className="max-w-3xl mx-auto p-6">
+
+            <Header />
+
+            <Dashboard />
+
+          </div>
+
+        </div>
+      );
+    }
+
+
+    /* ===============================
+        ROOT RENDER
+    =============================== */
+
+    function Root() {
+
+      return (
+        <ThemeProvider>
+          <App />
+        </ThemeProvider>
+      );
+    }
+
+
+    const root =
+      ReactDOM.createRoot(
+        document.getElementById("root")
+      );
+
+    root.render(<Root />);
+
+  </script>
+
+</body>
+</html>
